@@ -25,3 +25,5 @@ Algumas mudanças foram realizadas no código a fim de melhorar a usabilidade e 
 O parâmetro "random_state" foi adicionado ao método train_test_split, para garantir que a divisão de dados seja sempre a mesma, favorecendo a reprodutibilidade dos resultados.
 
 Os dados de **X_train___** e **X_test___** são agora gerados com o uso do método de **transform**, visto que o uso de **fit_transform** fazia com que os dados se reajustassem a base em questão, o que é um antipadrão por permitir o fit nos conjutos de teste e validação.
+
+O **refactored_code.py** contém a versão melhorada do script inicial.
