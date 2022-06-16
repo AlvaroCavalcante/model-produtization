@@ -45,7 +45,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 _pipeline_name = 'cartola_pro_clients'
 
-_project_root = os.getcwd()
+_project_root = '/home/alvaro/Desktop/model_produtization'
 _data_root = os.path.join(_project_root, 'data')
 
 _module_file = os.path.join(_project_root, 'src/production_code.py')
@@ -110,7 +110,7 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
   trainer = Trainer(
       module_file=module_file,
       custom_executor_spec=executor_spec.ExecutorClassSpec(Executor),
-      transformed_examples=transform.outputs['transformed_examples'],
+      examples=transform.outputs['transformed_examples'],
       schema=schema_gen.outputs['schema'],
       transform_graph=transform.outputs['transform_graph'],
       train_args=trainer_pb2.TrainArgs(num_steps=10000),
@@ -164,8 +164,7 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
       pipeline_name=pipeline_name,
       pipeline_root=pipeline_root,
       components=[
-          example_gen, statistics_gen, schema_gen, example_validator, transform,
-          trainer, model_resolver, evaluator, pusher
+          example_gen, statistics_gen, schema_gen, example_validator
       ],
       enable_cache=True,
       metadata_connection_config=metadata.sqlite_metadata_connection_config(
