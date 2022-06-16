@@ -18,3 +18,10 @@ Após algumas melhorias como alterações nas ordens de import, espaçamento das
 ![Image](/assets/new_code_quality.png "Qualidade do código refatorado")
 
 Para fins de demonstração, o código refatorado se encontra no arquivo **refactored_code.py**.
+
+## Demais alterações e boas práticas
+Algumas mudanças foram realizadas no código a fim de melhorar a usabilidade e produtização do mesmo. Primeiro, todas as etapas de pré-processamento foram colocadas dentro de funções, para permitir que as mesmas sejam testadas de maneira unitária, além de facilitar a sua chamada a partir de outros scripts/classes.
+
+O parâmetro "random_state" foi adicionado ao método train_test_split, para garantir que a divisão de dados seja sempre a mesma, favorecendo a reprodutibilidade dos resultados.
+
+Os dados de **X_train___** e **X_test___** são agora gerados com o uso do método de **transform**, visto que o uso de **fit_transform** fazia com que os dados se reajustassem a base em questão, o que é um antipadrão por permitir o fit nos conjutos de teste e validação.
