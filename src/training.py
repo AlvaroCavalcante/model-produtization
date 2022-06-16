@@ -147,5 +147,3 @@ y_test_pred_prob = pipe.named_steps['sgd'].predict_proba(X_test)[:, 1]
 
 fig, ax = roc_pr_curve(y_test, y_test_pred_prob, show=True)
 plt.show()
-
-joblib.dump(pipe, 'propension_model.joblib')
