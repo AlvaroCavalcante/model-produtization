@@ -3,12 +3,13 @@ from random import random
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import ks_2samp
 
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
-
 from sklearn.metrics import auc
 from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_score, recall_score
 
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -65,6 +66,20 @@ def get_transformed_data(data, pipe):
     return data___
 
 
+def calculate_ks_score(model_prob):
+    preds = pd.DataFrame(columns=['p0', 'p1'])
+    preds['p0'] = model_prob
+    preds['p1'] = 1-preds['p0']
+    preds['predicted'] = np.where(preds['p0'] < 0.5, 0, 1)
+    preds[target_name] = y_test.values
+
+    preds_true = preds[preds[target_name] == 1]['p0']
+    preds_false = preds[preds[target_name] == 0]['p0']
+
+    ks_score = ks_2samp(preds_true, preds_false)[0]
+    return ks_score
+
+
 def roc_pr_curve(y, y_pred_prob, show=True):
 
     fig, axes = plt.subplots(figsize=(16, 10), ncols=2, nrows=1)
@@ -108,7 +123,7 @@ def roc_pr_curve(y, y_pred_prob, show=True):
 
 
 df = pd.read_csv(
-    'data/desafiocartola.csv')
+    '/home/alvaro/Downloads/Desafio_Base_Eng_ML/Desafio_Eng_ML/desafiocartola.csv')
 df.set_index('GLOBO_ID', inplace=True)
 
 target_name = 'pro_target'
@@ -143,6 +158,14 @@ y_train_pred_prob = pipe.named_steps['sgd'].predict_proba(X_train)[:, 1]
 
 X_test = get_transformed_data(X_test, pipe)
 y_test_pred_prob = pipe.named_steps['sgd'].predict_proba(X_test)[:, 1]
+
+test_predictions = np.where(y_test_pred_prob < 0.5, 0, 1)
+
+test_precision = precision_score(y_test, test_predictions)
+test_recall = recall_score(y_test, test_predictions)
+ks_score = calculate_ks_score(test_predictions)
+
+print(test_precision, test_recall, ks_score)
 
 fig, ax = roc_pr_curve(y_test, y_test_pred_prob, show=True)
 plt.show()

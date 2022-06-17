@@ -28,6 +28,19 @@ Os dados de **X_train___** e **X_test___** são agora gerados com o uso do méto
 
 O **refactored_code.py** contém a versão melhorada do script inicial.
 
+### Métrica de avaliação
+O modelo inicial chega a atingir uma precisão de 81% e uma revocação de 75%, considerando um limiar de 50% na classificação. Ainda que essas métricas possam orientar a capacidade do modelo em discriminar usuários pró e não pró, o principal objetivo do time, em termos de negócios, é auxiliar na geração de campanhas que consigam incentivar o aumento de inscrições de usuários como pró e reduzir o "churn" dos que já são. 
+
+Dessa maneira, mais do que apenas adivinhar o valor 0 ou 1, precisamos entender a distribuição probabilística gerada nas previsões para uma tomada de decisão assertiva, visto que os clientes serão segmentados pelos que são pró e que tem uma baixa probabilidade de continuar como pró, e clientes que não são pró e que tem uma alta probabilidade de se tornarem pró.
+
+Baseado nisso, a métrica de KS (Kolmogorov-Smirnov), pode ser a que melhor se encaixa nesse contexto, visto que a mesma tem por objetivo medir a diferença entre duas distribuições probabilísticas. Essa métrica varia de 0 a 1, sendo que 0 representa uma distribuição idêntica de probabilidades, e 1 representa distribuições diferentes.
+
+Assim sendo, o objetivo de maximizar a métrica de KS é fazer com que o modelo consiga separar o máximo possível a classe 1 da classe 0, aumentando o intervalo de confiança entre os clientes pró e não pró. O método **calculate_ks_score** foi criado para o cálculo da métrica, exibindo um **KS inicial de 0,60**. Na prática, isso significa que as duas classes já possuem um bom nível de separação entre as suas probabilidades. Para exemplificar, é possível calcular que a média dos valores de probabilidade dos assinantes pró é de **0,73**, enquanto os não pró é de **0.24**. Ao plotar as duas distribuições, obtemos o seguinte gráfico:
+
+![Image](/assets/distributions.png "Qualidade do código refatorado")
+
+Onde azul é a distribuição probabilística dos pró e laranja os não pró.
+
 # Criação de pipelines com Airflow e TFX
 Uma vez que todo o fluxo do modelo foi finalizado, é interessante criar uma pipeline que contenha as etapas de pré-processamento, treinamento e deploy, automatizando o processo, garantindo reprodutibilidade e possibilitando utilizar ferramentas para melhorar o ciclo de vida do mesmo. Nesse caso, optei por utilizar o TensorFlow Extended (TFX) para criar a pipeline, visto que é uma solução Open-Source e que não está diretamente atrelado a um cloud provider específico.
 
