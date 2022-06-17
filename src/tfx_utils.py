@@ -31,21 +31,19 @@ def _fill_in_missing(x):
 
 
 def _get_log(value):
-    def log_f(): return tf.math.log(tf.cast(value, dtype=tf.float32))
-    def nan_f(): return tf.constant([float('nan')], dtype=tf.float32)
-
     apply_log = tf.reduce_any(
         tf.logical_or(tf.equal(tf.size(value), 0), tf.less(value, 0)))
-
-    print(apply_log)
 
     log_tensor = tf.where(apply_log, tf.constant(
         [float('nan')], dtype=tf.float32), tf.math.log(tf.cast(value, dtype=tf.float32)))
 
-    # tf.cond(apply_log, nan_f, log_f)
-
-    print(log_tensor)
     return log_tensor
+
+
+def _set_max_value(value):
+    avg_tensor = tf.where(tf.greater(value, 1), tf.ones_like(value), value)
+
+    return avg_tensor
 
 
 def _transformed_name(key, transform_name):
@@ -57,10 +55,11 @@ def preprocessing_fn(inputs):
     print(f'Showing inputs {inputs}')
 
     for key in LONG_TAIL_VARIABLES:
-        print(f'Key: {key}')
-        print(f'New inputs: {inputs[key]}')
-
         outputs[_transformed_name(key, 'log_')] = _get_log(
+            _fill_in_missing(inputs[key]))
+
+    for key in ['avg_3', 'avg_4']:
+        outputs[_transformed_name(key, 'log_')] = _set_max_value(
             _fill_in_missing(inputs[key]))
 
     return outputs
