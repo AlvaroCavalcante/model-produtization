@@ -48,7 +48,7 @@ _pipeline_name = 'cartola_pro_clients'
 _project_root = '/home/alvaro/Desktop/model_produtization'
 _data_root = os.path.join(_project_root, 'data')
 
-_module_file = os.path.join(_project_root, 'src/production_code.py')
+_module_file = os.path.join(_project_root, 'src/tfx_utils.py')
 
 _serving_model_dir = os.path.join(_project_root, 'serving_model', _pipeline_name)
 
@@ -164,7 +164,7 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
       pipeline_name=pipeline_name,
       pipeline_root=pipeline_root,
       components=[
-          example_gen, statistics_gen, schema_gen, example_validator
+          example_gen, statistics_gen, schema_gen, example_validator, transform
       ],
       enable_cache=True,
       metadata_connection_config=metadata.sqlite_metadata_connection_config(
