@@ -14,9 +14,9 @@ from sklearn.metrics import precision_score, recall_score
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
 def get_log(value):
@@ -79,6 +79,37 @@ def calculate_ks_score(model_prob):
     return ks_score
 
 
+def calculate_vif_value(input_df):
+    input_df['intercept'] = [1] * len(input_df)
+
+    vif = pd.DataFrame()
+    vif['feature'] = input_df.columns
+    vif['VIF'] = [
+        variance_inflation_factor(input_df.values, i) for i in range(len(input_df.columns))
+    ]
+
+    vif.drop(vif.index[vif['feature'] == 'intercept'], inplace = True)
+    return vif
+
+
+def get_colinear_features(input_data):
+    imp = SimpleImputer(strategy='mean')
+    input_data = imp.fit_transform(input_data)
+    colinear_features = []
+    dataframe = pd.DataFrame(input_data, columns=columns)
+
+    vif = calculate_vif_value(dataframe)
+
+    while len(vif[vif['VIF'] > 3]):
+        feature_name = vif.sort_values(
+            by=['VIF'], ascending=False)['feature'].values[0]
+        colinear_features.append(feature_name)
+        dataframe.drop(columns=[feature_name], inplace=True)
+        vif = calculate_vif_value(dataframe)
+
+    return colinear_features
+
+
 def roc_pr_curve(y, y_pred_prob, show=True):
 
     fig, axes = plt.subplots(figsize=(16, 10), ncols=2, nrows=1)
@@ -137,6 +168,7 @@ df = calculate_total_screen_pixels(df)
 df = set_max_value(df, ['avg_3', 'avg_4'], 1)
 
 X = df.drop(target_name, axis=1).copy()
+columns = X.columns
 
 pipe = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='mean')),  # Only numeric columns
@@ -148,6 +180,10 @@ pipe = Pipeline(steps=[
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, target, train_size=0.7, random_state=0)
+
+colinear_cols = get_colinear_features(X_train)
+X_train.drop(columns=colinear_cols, inplace=True)
+X_test.drop(columns=colinear_cols, inplace=True)
 
 pipe.fit(X_train, y_train)
 
