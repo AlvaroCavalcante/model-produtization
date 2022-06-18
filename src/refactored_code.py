@@ -16,7 +16,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
 
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -29,14 +28,15 @@ def get_log(value):
     return np.log(1+value)
 
 
-def transform_long_tail_variables(df, long_tail_vars, transformation_type='log'):
+def transform_long_tail_variables(dataframe, long_tail_vars, transformation_type='log'):
     transform_options = {'log': get_log}
 
     for column in long_tail_vars:
-        df[column] = df[column].apply(transform_options[transformation_type])
-        df.rename(columns={column: 'log_' + column}, inplace=True)
+        dataframe[column] = dataframe[column].apply(
+            transform_options[transformation_type])
+        dataframe.rename(columns={column: 'log_' + column}, inplace=True)
 
-    return df
+    return dataframe
 
 
 def get_total_pixels(pixels):
@@ -49,17 +49,17 @@ def get_total_pixels(pixels):
     return float(splitted_pixel_values[0])*float(splitted_pixel_values[1])
 
 
-def calculate_total_screen_pixels(df):
-    df['pixels'] = df['pixels'].apply(get_total_pixels)
-    df.rename(columns={'pixels': 'total_pixels'}, inplace=True)
-    return df
+def calculate_total_screen_pixels(dataframe):
+    dataframe['pixels'] = dataframe['pixels'].apply(get_total_pixels)
+    dataframe.rename(columns={'pixels': 'total_pixels'}, inplace=True)
+    return dataframe
 
 
-def set_max_value(df, col_list, max_value):
-    df[col_list] = df[col_list].clip(upper=max_value)
-    df.rename(
+def set_max_value(dataframe, col_list, max_value):
+    dataframe[col_list] = dataframe[col_list].clip(upper=max_value)
+    dataframe.rename(
         columns={col: 'ceil_'+col for col in col_list}, inplace=True)
-    return df
+    return dataframe
 
 
 def get_transformed_data(data, pipe):
@@ -73,10 +73,10 @@ def calculate_ks_score(model_prob):
     preds['p0'] = model_prob
     preds['p1'] = 1-preds['p0']
     preds['predicted'] = np.where(preds['p0'] < 0.5, 0, 1)
-    preds[target_name] = y_test.values
+    preds[TARGET_NAME] = y_test.values
 
-    preds_true = preds[preds[target_name] == 1]['p0']
-    preds_false = preds[preds[target_name] == 0]['p0']
+    preds_true = preds[preds[TARGET_NAME] == 1]['p0']
+    preds_false = preds[preds[TARGET_NAME] == 0]['p0']
 
     ks_score = ks_2samp(preds_true, preds_false)[0]
     return ks_score
@@ -106,15 +106,15 @@ def get_feature_importance(model, columns, plot_importance=False):
     sorted_feature_imp = sorted(features.items(), key=operator.itemgetter(1))
 
     if plot_importance:
-        plt.bar([x for x in range(len(importance))], importance)
+        plt.bar(list(range(len(importance))), importance)
         plt.show()
 
     return sorted_feature_imp
 
 
-def eval_model(X_features, y_target, pipe):
+def eval_model(X_features, y_target, pipe, show_roc_pr=False):
     X_features = get_transformed_data(X_features, pipe)
-    y_pred_prob = pipe.named_steps['sgd'].predict_proba(X_features)[:, 1]
+    y_pred_prob = pipe.named_steps['log'].predict_proba(X_features)[:, 1]
 
     test_predictions = np.where(y_pred_prob < 0.5, 0, 1)
 
@@ -122,8 +122,9 @@ def eval_model(X_features, y_target, pipe):
     recall = recall_score(y_target, test_predictions)
     ks_score = calculate_ks_score(y_pred_prob)
 
-    # fig, ax = roc_pr_curve(y_target, y_pred_prob, show=True)
-    # plt.show()
+    if show_roc_pr:
+        roc_pr_curve(y_target, y_pred_prob, show=True)
+        plt.show()
 
     return precision, recall, ks_score
 
@@ -185,31 +186,29 @@ def roc_pr_curve(y, y_pred_prob, show=True):
     if not show:
         plt.close(fig)
 
-    return fig, ax
 
-
-df = pd.read_csv(
+dataframe = pd.read_csv(
     '/home/alvaro/Downloads/Desafio_Base_Eng_ML/Desafio_Eng_ML/desafiocartola.csv')
-df.set_index('GLOBO_ID', inplace=True)
+dataframe.set_index('GLOBO_ID', inplace=True)
 
-target_name = 'pro_target'
-target = df[target_name]
+TARGET_NAME = 'pro_target'
+target = dataframe[TARGET_NAME]
 
 long_tail_variables = ['anos_desde_criacao', 'instagram_num', 'facebook_num',
                        'min_camp', 'interacoes_g1', 'tempo_desperd',
                        'iteracao_volei', 'iteracao_atletismo']
 
-df = transform_long_tail_variables(df, long_tail_variables)
-df = calculate_total_screen_pixels(df)
-df = set_max_value(df, ['avg_3', 'avg_4'], 1)
+dataframe = transform_long_tail_variables(dataframe, long_tail_variables)
+dataframe = calculate_total_screen_pixels(dataframe)
+dataframe = set_max_value(dataframe, ['avg_3', 'avg_4'], 1)
 
-X = df.drop(target_name, axis=1).copy()
+X = dataframe.drop(TARGET_NAME, axis=1).copy()
 columns = list(X.columns)
 
 pipe = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='mean')),  # Only numeric columns
     ('center', StandardScaler()),
-    ('sgd', LogisticRegression(random_state=0))
+    ('log', LogisticRegression(random_state=0))
 ]
 )
 
@@ -228,7 +227,7 @@ print(precision, recall, ks_score)
 
 for _ in range(8):
     feature_imp = get_feature_importance(
-        pipe.named_steps['sgd'], X_train.columns)
+        pipe.named_steps['log'], X_train.columns)
     feature = [feature_imp[0][0]]
 
     print(f'Removing feature {feature}')
