@@ -92,7 +92,8 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
     example_gen = tfx.components.CsvExampleGen(input_base=data_root_runtime)
 
     # Computes statistics over data for visualization and example validation.
-    statistics_gen = tfx.components.StatisticsGen(examples=example_gen.outputs['examples'])
+    statistics_gen = tfx.components.StatisticsGen(
+        examples=example_gen.outputs['examples'])
 
     # Generates schema based on statistics files.
     schema_gen = tfx.components.SchemaGen(
@@ -116,17 +117,8 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
         module_file=module_file,
         examples=example_gen.outputs['examples'],
         transform_graph=transform.outputs['transform_graph'],
-        train_args=tfx.proto.TrainArgs(num_steps=100),
-        eval_args=tfx.proto.EvalArgs(num_steps=5))
-
-    # trainer = Trainer(
-    #     module_file=module_file,
-    #     custom_executor_spec=executor_spec.ExecutorClassSpec(Executor),
-    #     examples=transform.outputs['transformed_examples'],
-    #     schema=schema_gen.outputs['schema'],
-    #     transform_graph=transform.outputs['transform_graph'],
-    #     train_args=trainer_pb2.TrainArgs(num_steps=10000),
-    #     eval_args=trainer_pb2.EvalArgs(num_steps=5000))
+        train_args=tfx.proto.TrainArgs(num_steps=2000),
+        eval_args=tfx.proto.EvalArgs(num_steps=400))
 
     # Get the latest blessed model for model validation.
     model_resolver = resolver.Resolver(
@@ -157,6 +149,7 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
                                 absolute={'value': -1e-10}))
                 })
         ])
+
     evaluator = Evaluator(
         examples=example_gen.outputs['examples'],
         model=trainer.outputs['model'],
@@ -165,18 +158,17 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
 
     # Checks whether the model passed the validation steps and pushes the model
     # to a file destination if check passed.
-    pusher = Pusher(
+    pusher = tfx.components.Pusher(
         model=trainer.outputs['model'],
-        model_blessing=evaluator.outputs['blessing'],
-        push_destination=pusher_pb2.PushDestination(
-            filesystem=pusher_pb2.PushDestination.Filesystem(
+        push_destination=tfx.proto.PushDestination(
+            filesystem=tfx.proto.PushDestination.Filesystem(
                 base_directory=serving_model_dir)))
 
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
         components=[
-            example_gen, statistics_gen, schema_gen, example_validator, transform, trainer
+            example_gen, statistics_gen, schema_gen, example_validator, transform, trainer, pusher
         ],
         enable_cache=True,
         metadata_connection_config=metadata.sqlite_metadata_connection_config(
