@@ -17,12 +17,10 @@ Após algumas melhorias como alterações nas ordens de import, espaçamento das
 
 ![Image](/assets/new_code_quality.png "Qualidade do código refatorado")
 
-Para fins de demonstração, o código refatorado se encontra no arquivo **refactored_code.py**.
-
 ## Demais alterações e boas práticas
-Algumas mudanças foram realizadas no código a fim de melhorar a usabilidade e produtização do mesmo. Primeiro, todas as etapas de pré-processamento foram colocadas dentro de funções, para permitir que as mesmas sejam testadas de maneira unitária, além de facilitar a sua chamada a partir de outros scripts/classes.
+Algumas mudanças foram realizadas no código a fim de melhorar a usabilidade e produtização do mesmo ou adequá-lo às boas práticas. Primeiro, todas as etapas de pré-processamento foram colocadas dentro de funções, para permitir que as mesmas sejam testadas de maneira unitária, além de facilitar a sua chamada a partir de outros scripts/classes.
 
-O parâmetro "random_state" foi adicionado ao método train_test_split, para garantir que a divisão de dados seja sempre a mesma, favorecendo a reprodutibilidade dos resultados.
+O parâmetro "random_state" foi adicionado ao método **train_test_split** e também à regressão logística, para favorecer a reprodutibilidade dos resultados.
 
 Os dados de **X_train___** e **X_test___** são agora gerados com o uso do método de **transform**, visto que o uso de **fit_transform** fazia com que os dados se reajustassem a base em questão, o que é um antipadrão por permitir o fit nos conjutos de teste e validação.
 
@@ -36,22 +34,22 @@ Por fim, embora as variáveis remanescentes não sejam colineares, nem todas pre
 
 ![Image](/assets/feature_impo.png "Importância das features")
 
-Deste modo, as variáveis menos relevantes foram excluídas progressivamente, reduzindo o conjunto de dados e mantendo o mesmo poder estatístico. Ao final, apenas 6 variáveis foram mantidas, sendo elas: ```anos_como_pro, ceil_avg_3, ceil_avg_4, escalacoes, norm_escalacao, log_tempo_desperd```. É evidente que, o real significado dessas variáveis e a conclusão de que se elas fazem realmente sentido ou não (considerando o contexto de negócio e analises estatísticas mais profundas) é algo a ser avaliado. Ainda assim, o resultado com o conjunto reduzido de dados foi o mesmo.
+Deste modo, as variáveis menos relevantes foram excluídas progressivamente, reduzindo o conjunto de dados e mantendo o mesmo poder estatístico. Ao final, apenas 6 variáveis foram mantidas, sendo elas: ```anos_como_pro, ceil_avg_3, ceil_avg_4, escalacoes, norm_escalacao, log_tempo_desperd```. É evidente que, o real significado dessas variáveis e a conclusão de que se elas fazem realmente sentido ou não (considerando o contexto de negócio e analises estatísticas mais profundas) é algo a ser avaliado. Ainda assim, os resultados com o conjunto de dados reduzido foi o mesmo.
 
-O **refactored_code.py** contém a versão melhorada do script inicial.
+Para fins de demonstração, o **refactored_code.py** contém a versão melhorada do script inicial.
 
 ### Métrica de avaliação
-O modelo inicial chega a atingir uma precisão de 81% e uma revocação de 75%, considerando um limiar de 50% na classificação. Ainda que essas métricas possam orientar a capacidade do modelo em discriminar usuários pró e não pró, o principal objetivo do time, em termos de negócios, é auxiliar na geração de campanhas que consigam incentivar o aumento de inscrições de usuários como pró e reduzir o "churn" dos que já são. 
+O modelo inicial chega a atingir uma precisão de 81% e uma revocação de 75%, considerando um limiar de 50% na classificação. Ainda que essas métricas possam orientar a capacidade do modelo em discriminar usuários PRO e não PRO, o principal objetivo do projeto, em termos de negócios, é auxiliar na geração de campanhas que consigam incentivar o aumento de inscrições de usuários como PRO e reduzir o "churn" dos que já são. 
 
-Dessa maneira, mais do que apenas adivinhar o valor 0 ou 1, precisamos entender a distribuição probabilística gerada nas previsões para uma tomada de decisão assertiva, visto que os clientes serão segmentados pelos que são pró e que tem uma baixa probabilidade de continuar como pró, e clientes que não são pró e que tem uma alta probabilidade de se tornarem pró.
+Dessa maneira, mais do que apenas adivinhar o valor 0 ou 1, precisamos entender a distribuição probabilística gerada nas previsões para uma tomada de decisão assertiva, visto que os clientes serão segmentados pelos que são PRO e que tem uma baixa probabilidade de continuar como PRO, e clientes que não são PRO e que tem uma alta probabilidade de se tornarem PRO.
 
 Baseado nisso, a métrica de KS (Kolmogorov-Smirnov), pode ser a que melhor se encaixa nesse contexto, visto que a mesma tem por objetivo medir a diferença entre duas distribuições probabilísticas. Essa métrica varia de 0 a 1, sendo que 0 representa uma distribuição idêntica de probabilidades, e 1 representa distribuições diferentes.
 
-Assim sendo, o objetivo de maximizar a métrica de KS é fazer com que o modelo consiga separar o máximo possível a classe 1 da classe 0, aumentando o intervalo de confiança entre os clientes pró e não pró. O método **calculate_ks_score** foi criado para o cálculo da métrica, exibindo um **KS inicial de 0,60**. Na prática, isso significa que as duas classes já possuem um bom nível de separação entre as suas probabilidades. Para exemplificar, é possível calcular que a média dos valores de probabilidade dos assinantes pró é de **0,73**, enquanto os não pró é de **0.24**. Ao plotar as duas distribuições, obtemos o seguinte gráfico:
+Assim sendo, maximizar a métrica de KS faz com que o modelo consiga separar o máximo possível a classe 1 da classe 0, aumentando o intervalo de confiança entre os clientes PRO e não PRO. O método **calculate_ks_score** foi criado para o cálculo da métrica, exibindo um **KS inicial de 0,60**. Na prática, isso significa que as duas classes já possuem um bom nível de separação entre as suas probabilidades. Para mostrar esse efeito de maneira mais visual, é possível verificar que a média dos valores de probabilidade dos assinantes PRO é de **0,73**, enquanto os não PRO é de **0.24**. Ao plotar as duas distribuições, obtemos o seguinte gráfico:
 
 ![Image](/assets/distributions.png "Distribuição das previsões")
 
-Onde azul é a distribuição probabilística dos pró e laranja os não pró.
+Onde azul é a distribuição probabilística dos PRO e laranja os não PRO.
 
 # Criação de pipelines com Airflow e TFX
 Uma vez que todo o fluxo do modelo foi finalizado, é interessante criar uma pipeline que contenha as etapas de pré-processamento, treinamento e deploy, automatizando o processo, garantindo reprodutibilidade e possibilitando utilizar ferramentas para melhorar o ciclo de vida do mesmo. Nesse caso, optei por utilizar o TensorFlow Extended (TFX) para criar a pipeline, visto que é uma solução Open-Source e que não está diretamente atrelado a um cloud provider específico.
