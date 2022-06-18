@@ -95,7 +95,7 @@ def calculate_vif_value(input_df):
     return vif
 
 
-def get_feature_importance(model, columns):
+def get_feature_importance(model, columns, plot_importance=False):
     importance = model.coef_[0]
 
     features = {}
@@ -105,8 +105,9 @@ def get_feature_importance(model, columns):
 
     sorted_feature_imp = sorted(features.items(), key=operator.itemgetter(1))
 
-    plt.bar([x for x in range(len(importance))], importance)
-    plt.show()
+    if plot_importance:
+        plt.bar([x for x in range(len(importance))], importance)
+        plt.show()
 
     return sorted_feature_imp
 
@@ -215,9 +216,8 @@ pipe = Pipeline(steps=[
 X_train, X_test, y_train, y_test = train_test_split(
     X, target, train_size=0.7, random_state=0)
 
-# colinear_cols = get_colinear_features(X_train, columns)
-colinear_cols = ['log_interacoes_g1', 'norm_rodadas', 'rel_pont',
-                 'dif_melhoria', 'log_iteracao_atletismo', 'max_camp', 'log_anos_desde_criacao']
+colinear_cols = get_colinear_features(X_train, columns)
+
 X_train.drop(columns=colinear_cols, inplace=True)
 X_test.drop(columns=colinear_cols, inplace=True)
 
@@ -226,16 +226,14 @@ pipe.fit(X_train, y_train)
 precision, recall, ks_score = eval_model(X_test, y_test, pipe)
 print(precision, recall, ks_score)
 
-feature_imp = get_feature_importance(
-    pipe.named_steps['sgd'], X_train.columns)
+for _ in range(8):
+    feature_imp = get_feature_importance(
+        pipe.named_steps['sgd'], X_train.columns)
+    feature = [feature_imp[0][0]]
 
-for feature in feature_imp[0:10]:
-    feature = [feature[0]]
     print(f'Removing feature {feature}')
     X_train.drop(columns=feature, inplace=True)
     X_test.drop(columns=feature, inplace=True)
     pipe.fit(X_train, y_train)
     precision, recall, ks_score = eval_model(X_test, y_test, pipe)
     print(precision, recall, ks_score)
-
-print(X_train)
