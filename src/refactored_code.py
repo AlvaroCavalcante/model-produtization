@@ -62,8 +62,7 @@ def set_max_value(df, col_list, max_value):
 def get_transformed_data(data, pipe):
     data_ = pipe.named_steps['imputer'].transform(data)
     data__ = pipe.named_steps['center'].transform(data_)
-    data___ = pipe.named_steps['pca'].transform(data__)
-    return data___
+    return data__
 
 
 def calculate_ks_score(model_prob):
@@ -142,7 +141,6 @@ X = df.drop(target_name, axis=1).copy()
 pipe = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='mean')),  # Only numeric columns
     ('center', StandardScaler()),
-    ('pca', PCA(n_components=15)),
     ('sgd', SGDClassifier(loss='log', verbose=5,
                           early_stopping=True, validation_fraction=0.3))
 ]
