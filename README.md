@@ -32,6 +32,12 @@ Uma das formas de reduzir a quantidade de variáveis e simplificar o modelo gera
 
 O método **get_colinear_features** faz a iteração pelo dataset até trazer todas as features que têm um VIF maior que 3. Ao total, 7 variáveis foram excluídas do modelo, sendo elas: ```log_interacoes_g1, norm_rodadas, rel_pont, dif_melhoria, log_iteracao_atletismo, max_camp, log_anos_desde_criacao```. Ainda assim, os resultados atingidos pelo modelo se mantiveram os mesmos.
 
+Por fim, embora as variáveis remanescentes não sejam colineares, nem todas precisam fazer parte do modelo, visto que algumas delas possuem pouca influência no resultado gerado pelo mesmo. O gráfico abaixo mostra a importância das variáveis na regressão logística:
+
+![Image](/assets/feature_impo.png "Importância das features")
+
+Deste modo, as variáveis menos relevantes foram excluídas progressivamente, reduzindo o conjunto de dados e mantendo o mesmo poder estatístico. Ao final, apenas 6 variáveis foram mantidas, sendo elas: ```anos_como_pro, ceil_avg_3, ceil_avg_4, escalacoes, norm_escalacao, log_tempo_desperd```. É evidente que, o real significado dessas variáveis e a conclusão de que se elas fazem realmente sentido ou não (considerando o contexto de negócio e analises estatísticas mais profundas) é algo a ser avaliado. Ainda assim, o resultado com o conjunto reduzido de dados foi o mesmo.
+
 O **refactored_code.py** contém a versão melhorada do script inicial.
 
 ### Métrica de avaliação
@@ -43,7 +49,7 @@ Baseado nisso, a métrica de KS (Kolmogorov-Smirnov), pode ser a que melhor se e
 
 Assim sendo, o objetivo de maximizar a métrica de KS é fazer com que o modelo consiga separar o máximo possível a classe 1 da classe 0, aumentando o intervalo de confiança entre os clientes pró e não pró. O método **calculate_ks_score** foi criado para o cálculo da métrica, exibindo um **KS inicial de 0,60**. Na prática, isso significa que as duas classes já possuem um bom nível de separação entre as suas probabilidades. Para exemplificar, é possível calcular que a média dos valores de probabilidade dos assinantes pró é de **0,73**, enquanto os não pró é de **0.24**. Ao plotar as duas distribuições, obtemos o seguinte gráfico:
 
-![Image](/assets/distributions.png "Qualidade do código refatorado")
+![Image](/assets/distributions.png "Distribuição das previsões")
 
 Onde azul é a distribuição probabilística dos pró e laranja os não pró.
 
