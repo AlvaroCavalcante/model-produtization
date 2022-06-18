@@ -46,23 +46,6 @@ def _set_max_value(value):
     return avg_tensor
 
 
-def _calculate_total_screen_pixels(pixels):
-    print(f'Showing pixels {pixels}')
-
-    if pixels.dtype != tf.string:
-        print('Not a string, returning')
-        return tf.constant([float('nan')], dtype=tf.float32)
-
-    splitted_tensor = tf.strings.split(pixels, sep='x')
-    print(f'Spplited tensor: {splitted_tensor}')
-    numeric_splitted_tensor = tf.strings.to_number(splitted_tensor, out_type=tf.float32)
-    print(f'numeric tensor: {splitted_tensor}')
-
-    total_pixels = tf.math.reduce_prod(numeric_splitted_tensor, keepdims=True)[0][0]
-    print(total_pixels)
-    return total_pixels
-
-
 def _transformed_name(key, transform_name):
     return transform_name + key
 
@@ -78,9 +61,6 @@ def preprocessing_fn(inputs):
     for key in ['avg_3', 'avg_4']:
         outputs[_transformed_name(key, 'ceil_')] = _set_max_value(
             _fill_in_missing(inputs[key]))
-
-    outputs['total_pixels'] = _calculate_total_screen_pixels(
-        _fill_in_missing(inputs['pixels']))
 
     print(f'Showing outputs: {outputs}')
     return outputs
