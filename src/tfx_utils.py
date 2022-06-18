@@ -1,8 +1,9 @@
 import tensorflow as tf
+import tensorflow_transform as tft
 
-LONG_TAIL_VARIABLES = ['anos_desde_criacao', 'instagram_num', 'facebook_num',
-                       'min_camp', 'interacoes_g1', 'tempo_desperd',
-                       'iteracao_volei', 'iteracao_atletismo']
+LONG_TAIL_VARIABLES = ['tempo_desperd']
+NUMERICAL_VARS = ['escalacoes', 'norm_escalacao', 'anos_como_pro']
+CEIL_VARS = ['avg_3', 'avg_4']
 
 LABEL_KEY = 'pro_target'
 
@@ -55,12 +56,18 @@ def preprocessing_fn(inputs):
     print(f'Showing inputs {inputs}')
 
     for key in LONG_TAIL_VARIABLES:
-        outputs[_transformed_name(key, 'log_')] = _get_log(
+        outputs[_transformed_name(key, 'log_')] = tft.scale_to_z_score(_get_log(
+            _fill_in_missing(inputs[key])))
+
+    for key in CEIL_VARS:
+        outputs[_transformed_name(key, 'ceil_')] = tft.scale_to_z_score(_set_max_value(
+            _fill_in_missing(inputs[key])))
+
+    for key in NUMERICAL_VARS:
+        outputs[_transformed_name(key, 'zscore_')] = tft.scale_to_z_score(
             _fill_in_missing(inputs[key]))
 
-    for key in ['avg_3', 'avg_4']:
-        outputs[_transformed_name(key, 'ceil_')] = _set_max_value(
-            _fill_in_missing(inputs[key]))
+    outputs[LABEL_KEY] = _fill_in_missing(inputs[LABEL_KEY])
 
     print(f'Showing outputs: {outputs}')
     return outputs
