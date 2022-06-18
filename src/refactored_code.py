@@ -88,11 +88,21 @@ def calculate_vif_value(input_df):
         variance_inflation_factor(input_df.values, i) for i in range(len(input_df.columns))
     ]
 
-    vif.drop(vif.index[vif['feature'] == 'intercept'], inplace = True)
+    vif.drop(vif.index[vif['feature'] == 'intercept'], inplace=True)
     return vif
 
 
-def get_colinear_features(input_data):
+def plot_feature_importance(model):
+    importance = model.coef_[0]
+
+    for i, v in enumerate(importance):
+        print('Feature: %0d, Score: %.5f' % (i, v))
+
+    plt.bar([x for x in range(len(importance))], importance)
+    plt.show()
+
+
+def get_colinear_features(input_data, columns):
     imp = SimpleImputer(strategy='mean')
     input_data = imp.fit_transform(input_data)
     colinear_features = []
@@ -181,7 +191,7 @@ pipe = Pipeline(steps=[
 X_train, X_test, y_train, y_test = train_test_split(
     X, target, train_size=0.7, random_state=0)
 
-colinear_cols = get_colinear_features(X_train)
+colinear_cols = get_colinear_features(X_train, columns)
 X_train.drop(columns=colinear_cols, inplace=True)
 X_test.drop(columns=colinear_cols, inplace=True)
 
@@ -197,7 +207,9 @@ test_predictions = np.where(y_test_pred_prob < 0.5, 0, 1)
 
 test_precision = precision_score(y_test, test_predictions)
 test_recall = recall_score(y_test, test_predictions)
-ks_score = calculate_ks_score(test_predictions)
+ks_score = calculate_ks_score(y_test_pred_prob)
+
+plot_feature_importance(pipe.named_steps['sgd'])
 
 print(test_precision, test_recall, ks_score)
 
