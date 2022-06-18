@@ -52,7 +52,33 @@ Assim sendo, maximizar a métrica de KS faz com que o modelo consiga separar o m
 Onde azul é a distribuição probabilística dos PRO e laranja os não PRO.
 
 # Criação de pipelines com Airflow e TFX
-Uma vez que todo o fluxo do modelo foi finalizado, é interessante criar uma pipeline que contenha as etapas de pré-processamento, treinamento e deploy, automatizando o processo, garantindo reprodutibilidade e possibilitando utilizar ferramentas para melhorar o ciclo de vida do mesmo. Nesse caso, optei por utilizar o TensorFlow Extended (TFX) para criar a pipeline, visto que é uma solução Open-Source e que não está diretamente atrelado a um cloud provider específico.
+Uma vez que o script de treinamento do modelos está finalizado, é interessante criar uma pipeline que contenha as etapas de pré-processamento, treinamento e deploy, automatizando o processo, garantindo reprodutibilidade e possibilitando utilizar ferramentas para melhorar o ciclo de vida do mesmo. Nesse caso, optei por adotar o TensorFlow Extended (TFX) para a pipeline, visto que é uma solução Open-Source e que não está diretamente atrelada a um cloud provider específico.
 
-O Airflow, por sua vez, foi utilizado para exibição e execução da pipeline, visto que é uma ferramenta bastante adotada pela comunidade.
+O Airflow, por sua vez, foi utilizado para exibição e execução da pipeline, visto que é uma ferramenta bastante adotada pela comunidade. O código fonte com a definição da pipeline pode ser visto no arquivo **tfx_pipeline.py**. Cada um dos componenetes que formam a pipeline serão explicado individualmente nas seções posteriores.
+
+### Input de dados
+O primeiro componente do fluxo é o gerador de *Examples* (instâncias de dados), responsável por trazer os dados provenientes de arquivos ou serviços externos para dentro da pipeline. Nessa caso, utilizei o **CsvExampleGen** para ler o arquivo CSV e realizar o split, conversão e particionamento de dados.
+
+Por padrão, os dados são divididos em múltiplos splits para melhorar a paralelização das operações. Cada split é composto por duas partes (~66%) de dados utilizados para treinamento e uma parte (~33%) para teste. Além disso, os dados são convertidos para o formato binário "TFRecord", pois é a forma padrão do TensorFlow manipular os dados.
+
+### Gerador de estatísticas
+O gerador de estatísticas (**StatisticsGen**) é um componente que tem por objetivo levantar as principais características dos dados através de suas estatísticas. Para as features numéricas, o componente calcula a média, desvio padrão, valores mínimos e máximos e etc. Para as categóricas, a cardinalidade e a frequência do conjunto de strings é calculada. 
+
+Dessa forma, sempre que a pipeline for executada, para fazer o retreino do modelo, por exemplo, as estatísticas são calculadas nos novos dados e armazenadas para fins de comparação. Com isso, é possível identificar facilmente um qualquer tipo de desvio, outlier ou valor incorreto em cada uma das variáveis.
+
+### Gerador de Schema
+Para que os componentes do TensorFlow funcionem corretamente na pipeline, é necessário que as propriedades das variáveis sejam conhecidas, como o tipo de dados, shape, e etc. Por conta disso, o SchemaGen é utilizado para definir o Schema das variáveis e permitir que esse schema seja utilizado nas demais etapas para manipulação dos dados.
+
+### Validador de dados
+Uma vez que as estatísticas das features foram calculadas e seu schema atribuído, é possível utilizar o componente **ExampleValidator**. Esse componente, como o nome sugere, compara as estatísticas calculadas com os dados atuais e verifica se o schema está de acordo ao dados. Caso algum desvio ou anomalia seja encontrada, essa etapa da pipeline irá apresentar falha.
+
+### Feature engineering
+Com os dados validados, o componente Transform é utilizado para realizar o feature engineering. Esse componente, que é parte da biblioteca do TensorFlow Transform, faz a leitura do arquivo **tfx_utils.py** e chama a função **preprocessing_fn**. 
+
+Essa função possui o código fonte responsável por pré-processar as features, de maneira similar ao que foi feito no script **refactored_code.py**, porém, ao invés de utilizar funções pandas e numpy, é possível apenas utilizar a API do TensorFlow para realizar as operações. Isso acontece pelo fato de que todas as operações realizadas no TensorFlow são adicionadas no grafo de execução e organizadas para melhor otimizar os cálculos computacionais.
+
+### Treinamento
+De forma similar, o componente **Trainer** também depende do arquivo **tfx_utils.py**, porém, o mesmo faz a chamada da função **run_fn**. Essa função, por sua vez, é responsável por criar os gerados de dados de treinamento e validação, criar a arquitetura do modelo e fazer o salvamento dos checkpoints e do modelo treinado.
+
+Nesse caso, a API do Keras foi utilizada para criar um modelo simples de regressão logística. Além disso, a função _get_serve_tf_examples_fn foi criada para adicionar o layer de Transform, responsável pelo feature engineering, ao modelo. Assim, o pré-processamento de dados passa a ser parte das camadas iniciais do mesmo, não sendo necessário escrever uma função a parte para tratar os dados.
 
