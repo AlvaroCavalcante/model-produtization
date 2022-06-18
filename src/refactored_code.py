@@ -1,4 +1,5 @@
 from random import random
+import operator
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,6 +17,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import LogisticRegression
+
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 
@@ -92,14 +95,36 @@ def calculate_vif_value(input_df):
     return vif
 
 
-def plot_feature_importance(model):
+def get_feature_importance(model, columns):
     importance = model.coef_[0]
 
-    for i, v in enumerate(importance):
-        print('Feature: %0d, Score: %.5f' % (i, v))
+    features = {}
+
+    for index, score in enumerate(importance):
+        features[columns[index]] = abs(score)
+
+    sorted_feature_imp = sorted(features.items(), key=operator.itemgetter(1))
 
     plt.bar([x for x in range(len(importance))], importance)
     plt.show()
+
+    return sorted_feature_imp
+
+
+def eval_model(X_features, y_target, pipe):
+    X_features = get_transformed_data(X_features, pipe)
+    y_pred_prob = pipe.named_steps['sgd'].predict_proba(X_features)[:, 1]
+
+    test_predictions = np.where(y_pred_prob < 0.5, 0, 1)
+
+    precision = precision_score(y_target, test_predictions)
+    recall = recall_score(y_target, test_predictions)
+    ks_score = calculate_ks_score(y_pred_prob)
+
+    # fig, ax = roc_pr_curve(y_target, y_pred_prob, show=True)
+    # plt.show()
+
+    return precision, recall, ks_score
 
 
 def get_colinear_features(input_data, columns):
@@ -178,40 +203,39 @@ df = calculate_total_screen_pixels(df)
 df = set_max_value(df, ['avg_3', 'avg_4'], 1)
 
 X = df.drop(target_name, axis=1).copy()
-columns = X.columns
+columns = list(X.columns)
 
 pipe = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='mean')),  # Only numeric columns
     ('center', StandardScaler()),
-    ('sgd', SGDClassifier(loss='log', verbose=5,
-                          early_stopping=True, validation_fraction=0.3))
+    ('sgd', LogisticRegression(random_state=0))
 ]
 )
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, target, train_size=0.7, random_state=0)
 
-colinear_cols = get_colinear_features(X_train, columns)
+# colinear_cols = get_colinear_features(X_train, columns)
+colinear_cols = ['log_interacoes_g1', 'norm_rodadas', 'rel_pont',
+                 'dif_melhoria', 'log_iteracao_atletismo', 'max_camp', 'log_anos_desde_criacao']
 X_train.drop(columns=colinear_cols, inplace=True)
 X_test.drop(columns=colinear_cols, inplace=True)
 
 pipe.fit(X_train, y_train)
 
-X_train = get_transformed_data(X_train, pipe)
-y_train_pred_prob = pipe.named_steps['sgd'].predict_proba(X_train)[:, 1]
+precision, recall, ks_score = eval_model(X_test, y_test, pipe)
+print(precision, recall, ks_score)
 
-X_test = get_transformed_data(X_test, pipe)
-y_test_pred_prob = pipe.named_steps['sgd'].predict_proba(X_test)[:, 1]
+feature_imp = get_feature_importance(
+    pipe.named_steps['sgd'], X_train.columns)
 
-test_predictions = np.where(y_test_pred_prob < 0.5, 0, 1)
+for feature in feature_imp[0:10]:
+    feature = [feature[0]]
+    print(f'Removing feature {feature}')
+    X_train.drop(columns=feature, inplace=True)
+    X_test.drop(columns=feature, inplace=True)
+    pipe.fit(X_train, y_train)
+    precision, recall, ks_score = eval_model(X_test, y_test, pipe)
+    print(precision, recall, ks_score)
 
-test_precision = precision_score(y_test, test_predictions)
-test_recall = recall_score(y_test, test_predictions)
-ks_score = calculate_ks_score(y_test_pred_prob)
-
-plot_feature_importance(pipe.named_steps['sgd'])
-
-print(test_precision, test_recall, ks_score)
-
-fig, ax = roc_pr_curve(y_test, y_test_pred_prob, show=True)
-plt.show()
+print(X_train)
