@@ -1,6 +1,79 @@
 # Produtização de modelos com TFX
 Esta documentação visa mostrar o passo a passo seguido no desenvolvimento do projeto, discutindo brevemente a respeito das decisões tomadas.
 
+## Instalação e setup do projeto
+**Nota:** O projeto foi executado em um ubuntu 20.04 com Python 3.8.
+
+Para instalar as dependências, primeiro é recomendável utilizar um ambiente virtual para isolar as dependências e garantir que não serão enfrentados conflitos com as bibliotecas já instaladas na máquina. Para instalar o virtualenv, basta executar:
+
+```
+pip3 install virtualenv 
+```
+**NOTA:** Caso você **não tenha o pip**, o seguinte comando pode ser utilizado para instalar o mesmo:
+```
+sudo apt-get install python-pip python-virtualenv python-dev build-essential
+```
+
+Feito isso, é possível iniciar um novo ambiente com o seguinte comando:
+```
+python3 -m venv tfx_pipeline
+```
+para fazer a ativação do ambiente, é preciso executar:
+```
+source tfx_pipeline/bin/activate
+```
+Com o ambiente virtual ativo no terminal, é necessário acessar a raiz do projeto e executar o seguinte comando:
+```
+pip3 install -r requirements.txt
+```
+A instalação pode demorar alguns minutos, mas vai garantir que todas as dependências sejam corretamente instaladas. Feito isso, é necessário iniciar o DB do Airflow com o seguinte comando: 
+
+```
+airflow db init
+```
+Com isso, uma pasta com o nome "airflow" deve ter sido criada na pasta pessoal, com os arquivos de configuração do serviço: 
+
+![Image](/assets/airflow.png "Airflow")
+Feito isso, execute o seguinte comando em seu terminal:
+```
+mkdir -p $HOME/airflow/dags/
+```
+Isso deve criar uma pasta "dags" dentro das configurações do Airflow. Por fim, vamos copiar a pipeline criada aqui para dentro das dags:
+```
+cp src/tfx_pipepline.py $HOME/airflow/dags/
+```
+## Execução do projeto
+Para executar o script refatorado do treinamento do modelo, basta utilizar o seguinte comando:
+```
+python3 src/refactored_code.py
+```
+Se tudo funcionou, você deve ver um print com a precisão, recall e KS do modelo.
+
+Para executar o AirFlow, primeiro é preciso criar um usuário e senha de acesso, o que pode ser feito com o seguinte comando:
+
+```
+airflow users  create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin
+```
+
+Feito isso, é necessário abrir dois novos terminais (não se esqueça de iniciar o ambiente virtual). No primeiro terminal, é preciso executar:
+```
+airflow webserver
+```
+e no segundo:
+```
+airflow scheduler
+```
+Pronto, basta navegar para o endereço [localhost:8080](http://localhost:8080) e acessar o Airflow utilizando "admin" como usuário e senha. Caso você não encontre o **"cartola_pro_clients"** na lista de DAGS, execute o seguinte comando: 
+
+```
+python3 src/tfx_pipeline.py
+```
+**NOTA:** É necessário alterar o valor da variável _project_root com o caminho da sua máquina.
+
+Por fim, basta localizar a DAG que deseja executar e dar um trigger, conforme mostrado abaixo:
+![Image](/assets/exec_air.png "Airflow")
+
+A pipeline de treinamento e deployment de modelos do TFX já irá iniciar!
 ## Padronização do código
 Assim como em qualquer projeto que preze pelo código limpo, é necessário estabelecer e seguir os padrões e convenções da linguagem ou da equipe de desenvolvimento. Nesse caso, a escrita de todo o código Python foi feita inteiramente em inglês (com exceção de nomes próprios) e utilizando o padrão [PEP8](https://peps.python.org/pep-0008/).
 
