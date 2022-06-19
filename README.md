@@ -78,7 +78,30 @@ Com os dados validados, o componente Transform é utilizado para realizar o feat
 Essa função possui o código fonte responsável por pré-processar as features, de maneira similar ao que foi feito no script **refactored_code.py**, porém, ao invés de utilizar funções pandas e numpy, é possível apenas utilizar a API do TensorFlow para realizar as operações. Isso acontece pelo fato de que todas as operações realizadas no TensorFlow são adicionadas no grafo de execução e organizadas para melhor otimizar os cálculos computacionais.
 
 ### Treinamento
-De forma similar, o componente **Trainer** também depende do arquivo **tfx_utils.py**, porém, o mesmo faz a chamada da função **run_fn**. Essa função, por sua vez, é responsável por criar os gerados de dados de treinamento e validação, criar a arquitetura do modelo e fazer o salvamento dos checkpoints e do modelo treinado.
+De forma similar, o componente **Trainer** também depende do arquivo **tfx_utils.py**, porém, o mesmo faz a chamada da função **run_fn**. Essa função, por sua vez, é responsável por criar os geradores de dados de treinamento e validação, criar a arquitetura do modelo e fazer o salvamento dos checkpoints do modelo treinado.
 
-Nesse caso, a API do Keras foi utilizada para criar um modelo simples de regressão logística. Além disso, a função _get_serve_tf_examples_fn foi criada para adicionar o layer de Transform, responsável pelo feature engineering, ao modelo. Assim, o pré-processamento de dados passa a ser parte das camadas iniciais do mesmo, não sendo necessário escrever uma função a parte para tratar os dados.
+Nesse caso, a API do Keras foi utilizada para criar um modelo simples de regressão logística. Além disso, a função **_get_serve_tf_examples_fn** foi criada para adicionar o layer de Transform ao modelo, responsável pelo feature engineering. Assim, o pré-processamento de dados passa a ser parte das camadas iniciais do mesmo, não sendo necessário escrever uma função a parte para tratar os dados.
 
+
+### Avaliação de performance
+Uma vez que o modelo foi treinado, a pipeline também deve ter um mecanismo para definir se esse modelo é bom o bastante para ser disponibilizado em produção. Para isso, dois componentes precisam ser utilizados, sendo o **Evaluator** e o **Resolver**. 
+
+O Evaluator possui uma série de configurações e hiperparâmetros que têm por principal objetivo fazer a avaliação do modelo seguindo diferentes aspectos. Além de analisar métricas comuns como precisão, acurácia e revocação, o Evaluator usa de diversas outras medidas estatísticas, além de fazer estratificações nos dados, para avaliar as previsões e resultados do modelo de maneira aprofundada.
+
+O Resolver, por sua vez, é responsável por carregar o último modelo treinado e que foi aceito em produção e avaliá-lo utilizar suas métricas de baseline no evaluator. Dessa forma, um novo modelo só se torna candidato a produção se tiver superado o modelo já implantado.
+
+Caso seja a primeira execução da pipeline, o comparativo se baseia apenas em limiares, por exemplo, uma taxa mínima de precisão para aceitar determinado modelo.
+
+### Deploy 
+Finalmente, o **pusher** é o componente responsável por realizar o deploy do modelo (caso esse novo modelo tenha superado o anterior). Por padrão, esse componente gera uma pasta com o nome do modelo e as versões do mesmo, conforme o exemplo abaixo:
+
+![Image](/assets/pusher.png "Deploy do modelo")
+
+Cada uma das versões possui um arquivo saved_model compatível com o TensorFlow e o Keras, o qual pode ser facilmente utilizado para realizar a predição de dados.
+
+## Pipeline completa
+A pipeline completa pode ser visualizada abaixo:
+
+![Image](/assets/complete_pipeline.png "Pipeline")
+
+A mesma pode ser executada via trigger manual ou através de um scheduler, executando de tempos em tempos.
