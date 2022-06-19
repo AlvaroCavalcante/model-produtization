@@ -1,3 +1,4 @@
-tfx/*
+tfx/pipelines/*
+tfx/metadata/*
 serving_model/*
 tfx_pipeline/*
