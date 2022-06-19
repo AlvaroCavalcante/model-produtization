@@ -1,18 +1,3 @@
-# Copyright 2019 Google LLC. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-"""Chicago taxi example using TFX."""
-
 import datetime
 import os
 from typing import List
@@ -31,6 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 _pipeline_name = 'cartola_pro_clients'
 
+# CHANGE WITH YOUR PROJECT ROOT
 _project_root = '/home/alvaro/Desktop/model_produtization'
 _data_root = os.path.join(_project_root, 'data')
 
@@ -45,15 +31,11 @@ _pipeline_root = os.path.join(_tfx_root, 'pipelines', _pipeline_name)
 _metadata_path = os.path.join(_tfx_root, 'metadata', _pipeline_name,
                               'metadata.db')
 
-# Pipeline arguments for Beam powered Components.
 _beam_pipeline_args = [
     '--direct_running_mode=multi_processing',
-    # 0 means auto-detect based on on the number of CPUs available
-    # during execution time.
     '--direct_num_workers=0',
 ]
 
-# Airflow-specific configs; these will be passed directly to airflow
 _airflow_config = {
     'schedule_interval': None,
     'start_date': datetime.datetime(2019, 1, 1),
@@ -64,7 +46,7 @@ def _get_eval_config():
     eval_config = tfma.EvalConfig(
         model_specs=[tfma.ModelSpec(label_key='pro_target')],
         slicing_specs=[
-            # An empty slice spec means the overall slice, i.e. the whole dataset.
+            # Use the whole dataset.
             tfma.SlicingSpec(),
             # Calculate metrics for each class.
             tfma.SlicingSpec(feature_keys=['pro_target']),
@@ -91,14 +73,11 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
                      module_file: str, serving_model_dir: str,
                      metadata_path: str,
                      beam_pipeline_args: List[str]) -> pipeline.Pipeline:
-    # Parametrize data root so it can be replaced on runtime. See the
-    # "Passing Parameters when triggering dags" section of
-    # https://airflow.apache.org/docs/apache-airflow/stable/dag-run.html
-    # for more details.
+
     data_root_runtime = data_types.RuntimeParameter(
         'data_root', ptype=str, default=data_root)
 
-    # Brings data into the pipeline or otherwise joins/converts training data.
+    # Brings data into the pipeline.
     example_gen = tfx.components.CsvExampleGen(input_base=data_root_runtime)
 
     # Computes statistics over data for visualization and example validation.
@@ -122,7 +101,7 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
         materialize=False,
         module_file=module_file)
 
-    # Uses user-provided Python function that implements a model.
+    # Implements keras model.
     trainer = tfx.components.Trainer(
         module_file=module_file,
         examples=example_gen.outputs['examples'],
@@ -167,7 +146,6 @@ def _create_pipeline(pipeline_name: str, pipeline_root: str, data_root: str,
         beam_pipeline_args=beam_pipeline_args)
 
 
-# 'DAG' below need to be kept for Airflow to detect dag.
 DAG = AirflowDagRunner(AirflowPipelineConfig(_airflow_config)).run(
     _create_pipeline(
         pipeline_name=_pipeline_name,
