@@ -64,13 +64,19 @@ Por padrão, os dados são divididos em múltiplos splits para melhorar a parale
 ### Gerador de estatísticas
 O gerador de estatísticas (**StatisticsGen**) é um componente que tem por objetivo levantar as principais características dos dados através de suas estatísticas. Para as features numéricas, o componente calcula a média, desvio padrão, valores mínimos e máximos e etc. Para as categóricas, a cardinalidade e a frequência do conjunto de strings é calculada. 
 
-Dessa forma, sempre que a pipeline for executada, para fazer o retreino do modelo, por exemplo, as estatísticas são calculadas nos novos dados e armazenadas para fins de comparação. Com isso, é possível identificar facilmente um qualquer tipo de desvio, outlier ou valor incorreto em cada uma das variáveis.
+Dessa forma, sempre que a pipeline for executada, para fazer o retreino do modelo, por exemplo, as estatísticas são calculadas nos novos dados e armazenadas para fins de comparação. Com isso, é possível identificar facilmente qualquer tipo de desvio, outlier ou valor incorreto em cada uma das variáveis. A imagem abaixo mostra algumas das estatísticas levantadas no conjunto de dados em questão:
+
+![Image](/assets/stats.png "Estatísticas dos dados")
 
 ### Gerador de Schema
-Para que os componentes do TensorFlow funcionem corretamente na pipeline, é necessário que as propriedades das variáveis sejam conhecidas, como o tipo de dados, shape, e etc. Por conta disso, o SchemaGen é utilizado para definir o Schema das variáveis e permitir que esse schema seja utilizado nas demais etapas para manipulação dos dados.
+Para que os componentes do TensorFlow funcionem corretamente na pipeline, é necessário que as propriedades das variáveis sejam conhecidas, como o tipo de dados, shape, e etc. Por conta disso, o **SchemaGen** é utilizado para definir o Schema das variáveis e permitir que esse schema seja utilizado nas demais etapas de manipulação dos dados. A imagem abaixo ilustra o schema das variáveis no dataset em questão:
+
+![Image](/assets/schema.png "Schema dos dados")
 
 ### Validador de dados
-Uma vez que as estatísticas das features foram calculadas e seu schema atribuído, é possível utilizar o componente **ExampleValidator**. Esse componente, como o nome sugere, compara as estatísticas calculadas com os dados atuais e verifica se o schema está de acordo ao dados. Caso algum desvio ou anomalia seja encontrada, essa etapa da pipeline irá apresentar falha.
+Uma vez que as estatísticas das features foram calculadas e seu schema atribuído, é possível utilizar o componente **ExampleValidator**. Esse componente, como o nome sugere, compara as estatísticas calculadas com os dados atuais e verifica se o schema está de acordo aos dados. Caso algum desvio ou anomalia seja encontrada, essa etapa da pipeline irá apresentar falha. Em uma situação de normalidade, esse componente gera os seguintes logs:
+
+![Image](/assets/anomalies.png "ExampleVal")
 
 ### Feature engineering
 Com os dados validados, o componente Transform é utilizado para realizar o feature engineering. Esse componente, que é parte da biblioteca do TensorFlow Transform, faz a leitura do arquivo **tfx_utils.py** e chama a função **preprocessing_fn**. 
