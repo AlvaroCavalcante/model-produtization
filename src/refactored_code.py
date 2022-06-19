@@ -235,4 +235,4 @@ for _ in range(8):
     X_test.drop(columns=feature, inplace=True)
     pipe.fit(X_train, y_train)
     precision, recall, ks_score = eval_model(X_test, y_test, pipe)
-    print(precision, recall, ks_score)
+    print(f'Precision: {precision}, Recall: {recall}, KS: {ks_score}')

@@ -17,7 +17,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 _pipeline_name = 'cartola_pro_clients'
 
 # CHANGE WITH YOUR PROJECT ROOT
-_project_root = '/home/alvaro/Desktop/model_produtization'
+_project_root = '/home/alvaro/Documentos/model-produtization/'
 _data_root = os.path.join(_project_root, 'data')
 
 _module_file = os.path.join(_project_root, 'src/tfx_utils.py')
