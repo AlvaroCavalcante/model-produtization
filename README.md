@@ -1,5 +1,5 @@
 # Produtização de modelos com TFX
-Esta documentação visa mostrar o passo a passo seguido no desenvolvimento do projeto, discutindo brevemente a respeito das decisões tomadas.
+Esta documentação visa mostrar o passo a passo seguido no desenvolvimento do projeto, discutindo brevemente a respeito das decisões tomadas. Para melhor visualizar a documentação, recomendo o uso de uma ferramenta de visualização de Markdown. A **Markdown Preview Enhanced** é um exemplo de extenção do Visual Studio Code que permite a visualização desse tipo de documento.
 
 ## Instalação e setup do projeto
 **Nota:** O projeto foi executado em um ubuntu 20.04 com Python 3.8.
