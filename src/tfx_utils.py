@@ -3,15 +3,9 @@ from absl import logging
 
 import tensorflow as tf
 import tensorflow_transform as tft
-import tensorflow_model_analysis as tfma
-from tensorflow_transform.tf_metadata import schema_utils
-from tfx.components.trainer.fn_args_utils import DataAccessor
-from tfx_bsl.tfxio import dataset_options
-from tensorflow import estimator as tf_estimator
 from tensorflow import keras
-from tfx import v1 as tfx
 from tfx_bsl.public import tfxio
-from tensorflow_metadata.proto.v0 import schema_pb2
+from tfx import v1 as tfx
 
 LONG_TAIL_VARIABLES = ['tempo_desperd']
 NUMERICAL_VARS = ['escalacoes', 'norm_escalacao', 'anos_como_pro']
@@ -102,23 +96,21 @@ def _input_fn(file_pattern: List[Text],
 
 def preprocessing_fn(inputs):
     outputs = {}
-    print(f'Showing inputs {inputs}')
 
     for key in LONG_TAIL_VARIABLES:
-        outputs[_transformed_name(key, 'log_')] = tft.scale_to_z_score(_get_log(
+        outputs[key] = tft.scale_to_z_score(_get_log(
             _fill_in_missing(inputs[key])))
 
     for key in CEIL_VARS:
-        outputs[_transformed_name(key, 'ceil_')] = tft.scale_to_z_score(_set_max_value(
+        outputs[key] = tft.scale_to_z_score(_set_max_value(
             _fill_in_missing(inputs[key])))
 
     for key in NUMERICAL_VARS:
-        outputs[_transformed_name(key, 'zscore_')] = tft.scale_to_z_score(
+        outputs[key] = tft.scale_to_z_score(
             _fill_in_missing(inputs[key]))
 
     outputs[LABEL_KEY] = _fill_in_missing(inputs[LABEL_KEY])
 
-    print(f'Showing outputs: {outputs}')
     return outputs
 
 
@@ -127,21 +119,20 @@ def _apply_preprocessing(raw_features, tft_layer):
     if LABEL_KEY in raw_features:
         transformed_label = transformed_features.pop(LABEL_KEY)
         return transformed_features, transformed_label
-    else:
-        return transformed_features, None
+
+    return transformed_features, None
 
 
 def _get_serve_tf_examples_fn(model, tf_transform_output):
-    # We must save the tft_layer to the model to ensure its assets are kept and
-    # tracked.
+    # adding transformations in model layer
     model.tft_layer = tf_transform_output.transform_features_layer()
 
     @tf.function(input_signature=[
         tf.TensorSpec(shape=[None], dtype=tf.string, name='examples')
     ])
     def serve_tf_examples_fn(serialized_tf_examples):
-        # Expected input is a string which is serialized tf.Example format.
         feature_spec = tf_transform_output.raw_feature_spec()
+
         # Only add the necessary features to the model
         required_feature_spec = {
             k: v for k, v in feature_spec.items() if k in _FEATURE_KEYS
@@ -149,27 +140,18 @@ def _get_serve_tf_examples_fn(model, tf_transform_output):
         parsed_features = tf.io.parse_example(serialized_tf_examples,
                                               required_feature_spec)
 
-        # Preprocess parsed input with transform operation defined in
-        # preprocessing_fn().
         transformed_features, _ = _apply_preprocessing(parsed_features,
                                                        model.tft_layer)
-        # Run inference with ML model.
         return model(transformed_features)
 
     return serve_tf_examples_fn
 
 
 def _build_keras_model() -> tf.keras.Model:
-    """Creates a DNN Keras model for classifying penguin data.
-
-    Returns:
-      A Keras Model.
-    """
-    # The model below is built with Functional API, please refer to
-    # https://www.tensorflow.org/guide/keras/overview for all API options.
-    inputs = [keras.layers.Input(shape=(1,), name=f) for f in _FEATURE_KEYS]
-    d = keras.layers.concatenate(inputs)
-    outputs = keras.layers.Dense(1, activation='sigmoid')(d)
+    inputs = [keras.layers.Input(shape=(1,), name=feat)
+              for feat in _FEATURE_KEYS]
+    input_layer = keras.layers.concatenate(inputs)
+    outputs = keras.layers.Dense(1, activation='sigmoid')(input_layer)
 
     model = keras.Model(inputs=inputs, outputs=outputs)
     model.compile(
@@ -183,18 +165,6 @@ def _build_keras_model() -> tf.keras.Model:
 
 # TFX Trainer will call this function.
 def run_fn(fn_args: tfx.components.FnArgs):
-    """Train the model based on given args.
-
-    Args:
-      fn_args: Holds args used to train the model as name/value pairs.
-    """
-
-    # This schema is usually either an output of SchemaGen or a manually-curated
-    # version provided by pipeline author. A schema can also derived from TFT
-    # graph if a Transform component is used. In the case when either is missing,
-    # `schema_from_feature_spec` could be used to generate schema from very simple
-    # feature_spec, but the schema returned would be very primitive.
-
     tf_transform_output = tft.TFTransformOutput(fn_args.transform_output)
 
     train_dataset = _input_fn(
@@ -219,7 +189,5 @@ def run_fn(fn_args: tfx.components.FnArgs):
         'serving_default': _get_serve_tf_examples_fn(model, tf_transform_output),
     }
 
-    # The result of the training should be saved in `fn_args.serving_model_dir`
-    # directory.
     model.save(fn_args.serving_model_dir,
                save_format='tf', signatures=signatures)

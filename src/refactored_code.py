@@ -188,7 +188,7 @@ def roc_pr_curve(y, y_pred_prob, show=True):
 
 
 dataframe = pd.read_csv(
-    '/home/alvaro/Downloads/Desafio_Base_Eng_ML/Desafio_Eng_ML/desafiocartola.csv')
+    'data/desafiocartola.csv')
 dataframe.set_index('GLOBO_ID', inplace=True)
 
 TARGET_NAME = 'pro_target'
