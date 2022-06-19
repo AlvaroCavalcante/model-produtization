@@ -111,3 +111,12 @@ A pipeline completa pode ser visualizada abaixo:
 ![Image](/assets/complete_pipeline.png "Pipeline")
 
 A mesma pode ser executada via trigger manual ou através de um scheduler, executando de tempos em tempos.
+
+## Conclusões
+Em relação ao modelo, muito mais análise e otimização poderia ser feita, como por exemplo: utilizar a validação cruzada para treinar em todo o conjunto, adotar um gridsearch ou randomsearch para encontrar parâmetros melhores e também testar outros modelos como florestas aleatórias e redes neurais. 
+
+Ainda assim, o principal foco do trabalho foi na criação de uma pipeline que consiga produtizar o modelo, uma vez que o mesmo foi criado. O script **refactored_code.py** ilustra um script padrão que foi utilizado para realizar a análise exploratória de dados, busca de melhores parâmetros e treinamento. Em outras palavras, esse script representa o output do time de ciência de dados. 
+
+Como MLE, a principal tarefa foi transformar o script em uma pipeline que permita o retreinamento do modelo, garantindo que a mesma possa ser executada de maneira autônoma (inclive subir novas versões de modelo) e que seja monitorada contra possíveis anomalias nos dados.
+
+Com apenas algumas mudanças, como na fonte de input que provavelmente será de um SGBD e não de um CSV e do output, que provavelmente será em algum servidor cloud, a pipeline está pronta para produtizar modelos.
