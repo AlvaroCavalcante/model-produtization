@@ -63,7 +63,7 @@ e no segundo:
 ```
 airflow scheduler
 ```
-Pronto, basta navegar para o endereço [localhost:8080](http://localhost:8080) e acessar o Airflow utilizando "admin" como usuário e senha. Caso você não encontre o **"cartola_pro_clients"** na lista de DAGS, execute o seguinte comando: 
+Pronto, basta navegar para o endereço [localhost:8080](http://localhost:8080) e acessar o Airflow utilizando "admin" como usuário e senha. Caso você não encontre o **"pro_clients_prediction"** na lista de DAGS, execute o seguinte comando: 
 
 ```
 python3 src/tfx_pipeline.py
@@ -101,7 +101,7 @@ O **PCA** foi removido da pipeline, pois a adoção do mesmo não gerou melhoria
 
 Uma das formas de reduzir a quantidade de variáveis e simplificar o modelo gerado foi através da adoção do VIF (Variance Inflation Factor). De maneira simplificada, o VIF mede o índice de colinearidade entre as variáveis do dataset, evidenciando as features que poderiam ser excluídas sem gerar grandes impactos na performance do modelo.
 
-O método **get_colinear_features** faz a iteração pelo dataset até trazer todas as features que têm um VIF maior que 3. Ao total, 7 variáveis foram excluídas do modelo, sendo elas: ```log_interacoes_g1, norm_rodadas, rel_pont, dif_melhoria, log_iteracao_atletismo, max_camp, log_anos_desde_criacao```. Ainda assim, os resultados atingidos pelo modelo se mantiveram os mesmos.
+O método **get_colinear_features** faz a iteração pelo dataset até trazer todas as features que têm um VIF maior que 3. Ao total, 7 variáveis foram excluídas do modelo, sendo elas: ```log_interacoes, norm_rodadas, rel_pont, dif_melhoria, log_iteracao_atletismo, max_camp, log_anos_desde_criacao```. Ainda assim, os resultados atingidos pelo modelo se mantiveram os mesmos.
 
 Por fim, embora as variáveis remanescentes não sejam colineares, nem todas precisam fazer parte do modelo, visto que algumas delas possuem pouca influência no resultado gerado pelo mesmo. O gráfico abaixo mostra a importância das variáveis na regressão logística:
 

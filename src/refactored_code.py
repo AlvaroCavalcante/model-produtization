@@ -188,14 +188,14 @@ def roc_pr_curve(y, y_pred_prob, show=True):
 
 
 dataframe = pd.read_csv(
-    'data/desafiocartola.csv')
-dataframe.set_index('GLOBO_ID', inplace=True)
+    'data/my_data.csv')
+dataframe.set_index('COMPANY_ID', inplace=True)
 
 TARGET_NAME = 'pro_target'
 target = dataframe[TARGET_NAME]
 
 long_tail_variables = ['anos_desde_criacao', 'instagram_num', 'facebook_num',
-                       'min_camp', 'interacoes_g1', 'tempo_desperd',
+                       'min_camp', 'interacoes', 'tempo_desperd',
                        'iteracao_volei', 'iteracao_atletismo']
 
 dataframe = transform_long_tail_variables(dataframe, long_tail_variables)

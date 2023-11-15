@@ -14,7 +14,7 @@ logging.set_verbosity(logging.INFO)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-_pipeline_name = 'cartola_pro_clients'
+_pipeline_name = 'pro_clients_prediction'
 
 # CHANGE WITH YOUR PROJECT ROOT
 _project_root = '/home/alvaro/Documentos/model-produtization/'
